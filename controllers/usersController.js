@@ -50,106 +50,120 @@ const createUser = (req, res) => {
 }
 
 const updateUser = (req, res) => {
-  const id = parseInt(req.params.id)
+  console.log('Receiving data from request body...')
 
-  // find user by id from request params
-  const user = data.users.find((user) => user.id === id)
+  const { email, password, newPassword, firstName, lastName, id } = req.body
 
-  // if user doesn't exist - return error
+  console.log('Data received. Checking if user exists...')
+
+  const user = data.users.find((user) => user.id === parseInt(id))
   if (!user) {
     return res.status(400).json({
       message: `User with ID:${id} not found`,
     })
   }
 
-  console.log(req.body)
+  console.log('User exists. Building conditions...')
 
   // condition for updating user's email
   // updating email
-  const conditionEmail = req.body.email && req.body.password
+  const conditionEmail = !!email && !!password
   // updating password
-  const conditionPassword = req.body.password && req.body.newPassword
+  const conditionPassword = !!password && !!newPassword
   // updating first name
-  const conditionFirstName = req.body.firstName && req.body.password
+  const conditionFirstName = !!firstName && !!password
   // updating last name
-  const conditionLastName = req.body.lastName && req.body.password
+  const conditionLastName = !!lastName && !!password
 
-  // hashing new password
-  const hashedPassword = bcrypt.hash(req.body.newPassword, 10)
+  console.log('Conditions built. Checking if password is correct...')
 
   // decrypting old password to compare with password from request body
-  const isValid = bcrypt.compare(req.body.password, user.password)
-
-  console.log(conditionEmail)
-
-  // if user exists - update users info with data from request body according to conditions
-  if (conditionEmail) {
-    // check if email already exists
-    // if (data.users.find((user) => user.email === req.body.email)) {
-    //   return res.status(400).json({
-    //     message: `User with such email: ${req.body.email} already exists`,
-    //   })
-    // }
-
-    if (!isValid) {
-      return res.status(400).json({
-        message: 'Error. Password is incorrect',
-      })
-    } else {
-      user.email = req.body.email
-    }
-  } else if (conditionPassword) {
-    // check if old password is correct
-    if (!decryptedPassword) {
-      return res.status(400).json({
-        message: 'Error. Old password is incorrect',
-      })
-    }
-
-    user.password = hashedPassword
-  } else if (conditionFirstName) {
-    user.firstName = req.body.firstName
-  } else if (conditionLastName) {
-    user.lastName = req.body.lastName
-  } else {
+  const isValid = bcrypt.compare(String(password), String(user.password))
+  if (!isValid) {
     return res.status(400).json({
-      message: 'Error. Please fill all fields',
+      message: 'Error. Password is incorrect',
     })
   }
 
+  console.log('Password checked. Checking conditions...')
+
+  // if user exists - update users info with data from request body according to conditions
+  if (conditionEmail && isValid) {
+    console.log('User email updating...')
+
+    user.email = email
+    console.log('User email updated')
+  } else if (conditionPassword && isValid) {
+    console.log('User password updating...')
+
+    // hashing new password
+    const hashedNewPassword = bcrypt.hashSync(newPassword, 10)
+
+    user.password = hashedNewPassword
+    console.log('User password updated')
+  } else if (conditionFirstName && isValid) {
+    console.log('User first name updating...')
+
+    user.firstName = firstName
+    console.log('User first name updated')
+  } else if (conditionLastName && isValid) {
+    console.log('User last name updating...')
+
+    user.lastName = lastName
+    console.log('User last name updated')
+  } else {
+    return res.status(400).json({
+      message: 'Error. Please fill the fields',
+    })
+  }
+
+  console.log('User updated. filtering users array...')
+
   // filter users array by id, to exclude updated user
-  const filteredUsers = data.users.filter(
-    (user) => user.id !== parseInt(req.params.id),
+  const filteredUsers = data.users.filter((user) => user.id !== parseInt(id))
+
+  console.log(
+    'Users array filtered. adding updated user to the end of users array...',
   )
 
   // add updated user to the end of users array
   const unsortedUsers = [...filteredUsers, user]
+
+  console.log('Users array updated. sorting users array...')
 
   // set users array with updated user
   data.setUsers(
     unsortedUsers.sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0)),
   )
 
+  console.log('Users array sorted. rewriting users.json file...')
+
   // rewrite users.json file with new users array
   fs.writeFileSync('./model/users.json', JSON.stringify(data.users))
+
+  console.log('users.json file rewrited. Sending response...')
 
   res.json({ message: 'Successfully updated!', user })
 }
 
 const deleteUser = (req, res) => {
-  const id = req.body.id
+  const id = req.params.id
 
-  const user = data.users.find((user) => user.id === id)
+  console.log('Receiving data from params...')
+
+  const user = data.users.find((user) => user.id === +id)
 
   // if user doesn't exist - return error
   if (!user) {
     return res.status(400).json({
-      message: `User with ID:${id} not found`,
+      message: `User with ID:${+id} not found`,
     })
   }
 
+  console.log('User exists. Deleting user...')
+
   // filter users array by id, to exclude deleted user
-  const filteredUsers = data.users.filter((user) => user.id !== id)
+  const filteredUsers = data.users.filter((user) => user.id !== +id)
 
   // set users array without deleted user
   data.setUsers([...filteredUsers])
@@ -157,7 +171,9 @@ const deleteUser = (req, res) => {
   // rewrite users.json file with new users array
   fs.writeFileSync('./model/users.json', JSON.stringify(data.users))
 
-  res.json({ message: 'Successfully deleted!', user })
+  console.log('User deleted. Sending response...')
+
+  res.status(200).json({ message: 'Successfully deleted!', user })
 }
 
 const getUserById = (req, res) => {
@@ -173,25 +189,10 @@ const getUserById = (req, res) => {
   res.json({ message: 'Successfully found!', user })
 }
 
-const getUserByEmail = (req, res) => {
-  const email = req.body.email
-  const user = data.users.find((user) => user.email === email)
-
-  // if user doesn't exist - return error
-  if (!user) {
-    return res.status(400).json({
-      message: `User with email: ${req.body.email} not found`,
-    })
-  }
-
-  res.json({ message: 'Successfully found!', user })
-}
-
 module.exports = {
   getAllUsers,
   createUser,
   updateUser,
   deleteUser,
   getUserById,
-  getUserByEmail,
 }

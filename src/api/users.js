@@ -6,7 +6,6 @@ const {
   updateUser,
   deleteUser,
   getUserById,
-  getUserByEmail,
 } = require('../../controllers/usersController')
 
 // here we can create, read, update, delete users (CRUD) using REST API methods (GET, POST, PUT, DELETE) for /users route
@@ -14,11 +13,9 @@ const {
 // if we want to protect all routes in this file, we can use it in main router file (src/route/index.js)
 router.route('/').get(getAllUsers)
 
-router.route('/').post(getUserByEmail)
-
 router.route('/').post(createUser)
 
-router.route('/:id').put(updateUser)
+router.route('/').put(updateUser)
 
 router.route('/:id').delete(deleteUser)
 

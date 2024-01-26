@@ -4,6 +4,7 @@ const allowedOrigins = [
   'http://localhost:4000',
   'http://localhost:3000',
   'http://localhost:3001',
+  'https://yoki-intercode-academy-pet-project.onrender.com',
 ]
 
 module.exports = allowedOrigins

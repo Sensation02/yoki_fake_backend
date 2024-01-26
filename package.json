@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "express": "^4.18.2",
     "@babel/core": "^7.21.0",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.2.5",
@@ -18,6 +17,7 @@
     "eslint-config-prettier": "^8.6.0",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-prettier": "^4.2.1",
+    "express": "^4.18.2",
     "glob": "^10.3.3",
     "http-errors": "~1.6.3",
     "jsonwebtoken": "^9.0.2",
@@ -41,7 +41,6 @@
   "version": "1.0.0",
   "description": "yoki fake store backend",
   "main": "index.js",
-  "devDependencies": {},
   "scripts": {
     "dev": "nodemon -e js,json,css ./server.js",
     "test": "echo \"Error: no test specified\" && exit 1"

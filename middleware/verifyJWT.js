@@ -1,34 +1,46 @@
 const jwt = require('jsonwebtoken')
 require('dotenv').config()
 
+const secret = process.env.ACCESS_TOKEN_SECRET
+
 const verifyJWT = (req, res, next) => {
-  const accessToken = req.headers['authorization']
+  const authHeader = req.headers.authorization
 
   // check if accessToken is not empty
-  if (!accessToken) {
-    return res.status(401).json({
-      message: 'Access denied',
-    })
+  if (!authHeader) {
+    return res.status(403).json({ message: 'No token provided' })
   }
-  console.log('accessToken: ', accessToken) // for testing
+  console.log('Access token received. Trying to split it')
 
-  const token = accessToken.split(' ')[1] // Bearer <token> and it's in the second position [1]
+  const parts = authHeader.split(' ')
 
-  // check if token is not empty
+  if (!parts.length === 2) {
+    return res.status(403).json({ message: 'Token error' })
+  } else {
+    console.log('Token split successfully')
+  }
+
+  const [scheme, token] = parts
+  console.log('Token parts. scheme: ', scheme, 'token: ', token)
+
+  if (!/^Bearer$/i.test(scheme)) {
+    return res.status(403).json({ message: 'Token malformed' })
+  } else {
+    console.log('Bearer scheme found in token')
+  }
+
   try {
-    const validToken = jwt.verify(
-      token,
-      process.env.ACCESS_TOKEN_SECRET,
-      (err, decoded) => {
-        if (err) return res.sendStatus(403) // forbidden
-        // next we need a middleware to check if the user exists in the database
-        req.user = decoded.email
-        // next() is used to call the next middleware
-        next()
-      },
-    )
-    // req.user = validToken
-    // next()
+    console.log('Trying to verify token')
+    jwt.verify(token, secret, (err, decoded) => {
+      console.log('decode info: ', { decoded })
+      if (err)
+        return res
+          .status(403)
+          .json({ message: 'Failed to authenticate token.' })
+
+      req.userId = decoded.id
+      next()
+    })
   } catch (error) {
     return res.status(403).json({
       message: 'Invalid token',
